@@ -3,7 +3,7 @@ import { ArrowLeftIcon, MapPinIcon, FunnelIcon } from "@heroicons/react/24/outli
 import ReturnHomeButton from "./ReturnHome";
 import StatusBadgeForGov from "./StatusBadgeForGov";
 import toast from "react-hot-toast";
-import { supabaseClient } from "../data-service/supabseClient";
+import { supabaseClient } from "../data-service/supabaseClient";
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
 

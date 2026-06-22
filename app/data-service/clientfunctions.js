@@ -1,4 +1,4 @@
-import { supabaseClient } from "./supabseClient";
+import { supabaseClient } from "./supabaseClient";
 
 export async function submitReport(
   title,
@@ -25,7 +25,7 @@ export async function submitReport(
     }
   });
   const imageUrls = imagesToTheBucket.map((image) => {
-    return `https://ooxddorlyaovshmrbbjo.supabase.co/storage/v1/object/public/images/${image.name}`;
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${image.name}`;
   });
 
   const report = {
@@ -69,7 +69,7 @@ export async function uploadResolutionImages(images) {
 
   // Generate public URLs
   const imageUrls = imagesToTheBucket.map((image) => {
-    return `https://ooxddorlyaovshmrbbjo.supabase.co/storage/v1/object/public/images/${image.name}`;
+    return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${image.name}`;
   });
 
   return imageUrls;

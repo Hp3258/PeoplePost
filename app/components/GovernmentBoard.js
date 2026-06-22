@@ -68,7 +68,7 @@ const Map = dynamic(() => import("../components/Map"), { ssr: false });
 export default function GovermentBoard({ data }) {
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 34.05, lng: -118.25 });
-  const issues = data.data.map((item) => {
+  const issues = (data?.data ?? []).map((item) => {
     const {
       id,
       created_at,

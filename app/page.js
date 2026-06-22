@@ -39,8 +39,7 @@ const STATS = [
 
 export default async function page() {
   const supabase = await getServerSupabaseClientReadyOnly();
-  const { data: sessionData } = await supabase.auth.getSession();
-  const user = sessionData.session?.user;
+  const { data: { user } } = await supabase.auth.getUser();
   const email = user?.email;
   const reports = await getReports();
   const latestReports = user && reports?.length ? reports : LATEST_REPORTS;

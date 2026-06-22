@@ -23,22 +23,25 @@ export async function signUpAction(formData) {
     console.log(error);
     return { error };
   }
+  
+  const userId = data?.user?.id;
+
   if (role === "citizen") {
-    const { data, error } = await supabase
+    const { error: insertError } = await supabase
       .from("users")
-      .insert({ name, email, role });
-    if (error) {
-      console.log(error);
-      return { error };
+      .insert({ id: userId, name, email, role });
+    if (insertError) {
+      console.log(insertError);
+      return { error: insertError };
     }
     redirect("/report");
   } else {
-    const { data1, error1 } = await supabase
+    const { error: insertError } = await supabase
       .from("users")
-      .insert({ name, email, role, governmentId });
-    if (error1) {
-      console.log(error1);
-      return { error1 };
+      .insert({ id: userId, name, email, role, governmentId });
+    if (insertError) {
+      console.log(insertError);
+      return { error: insertError };
     }
     redirect("/gov-dashboard");
   }
@@ -53,7 +56,7 @@ export async function signout() {
     console.log(error);
   }
 
-  // redirect("/");
+  redirect("/");
 }
 
 export async function login(formData) {
@@ -91,7 +94,7 @@ export async function getcurrentOfficalData() {
     .select("name,governmentId")
     .eq("email", email);
 
-  return user1.data[0];
+  return user1?.data?.[0];
 }
 export async function getId() {
   const supabase = await getServerSupabaseClientReadyOnly();
@@ -100,7 +103,7 @@ export async function getId() {
   const email = user?.email;
   const person = await supabase.from("users").select("id").eq("email", email);
   const data1 = person?.data;
-  const id = data1[0]?.id;
+  const id = data1?.[0]?.id;
   return id;
 }
 

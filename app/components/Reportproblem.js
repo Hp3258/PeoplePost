@@ -12,6 +12,10 @@ import { useForm } from "react-hook-form";
 import { useState } from "react";
 import { submitReport } from "../data-service/clientfunctions";
 import toast, { Toaster } from "react-hot-toast";
+import dynamic from "next/dynamic";
+
+const Map = dynamic(() => import("../components/Map"), { ssr: false });
+
 
 const PROBLEM_TYPES = [
   "Pothole",
@@ -52,19 +56,47 @@ function Reportproblem({ id }) {
 
   const router = useRouter();
 
+  const { register, handleSubmit, setValue } = useForm();
+
   function currentLocation() {
-    // Fixed location for demo/submission
-    const lat = 19.8311356;
-    const lng = 75.2872578;
+    toast.loading("Getting your live location...", { id: "location" });
 
-    toast.loading("Getting your location...", { id: "location" });
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser.", { id: "location" });
+      return;
+    }
 
-    // Simulate a brief delay for better UX
-    setTimeout(() => {
-      console.log("📍 Using fixed location:", { lat, lng });
-      toast.success("Location captured!", { id: "location" });
-      router.push(`/report?lat=${lat}&lng=${lng}`);
-    }, 500);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        
+        console.log("📍 Captured live location:", { lat, lng });
+        toast.loading("Finding address...", { id: "location" });
+
+        try {
+          // Reverse Geocoding using OpenStreetMap Nominatim API
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+          const data = await response.json();
+          
+          if (data && data.display_name) {
+            setValue("address", data.display_name);
+            toast.success("Location and address captured!", { id: "location" });
+          } else {
+            toast.success("Location captured!", { id: "location" });
+          }
+        } catch (error) {
+          toast.success("Location captured! (Address lookup failed)", { id: "location" });
+        }
+
+        router.push(`/report?lat=${lat}&lng=${lng}`, { scroll: false });
+      },
+      (error) => {
+        toast.error("Failed to get location. Please allow permissions.", { id: "location" });
+        console.error("Geolocation error:", error);
+      },
+      { enableHighAccuracy: true }
+    );
   }
   const searchParams = useSearchParams();
   let lat = searchParams.get("lat") || "";
@@ -164,7 +196,6 @@ function Reportproblem({ id }) {
     router.push("/account");
   }
 
-  const { register, handleSubmit } = useForm();
   const imageCount = images.length;
   const isUploadDisabled = imageCount >= 5;
 
@@ -364,11 +395,14 @@ function Reportproblem({ id }) {
 
               {/* Display Lat/Lng if available */}
               {(lat || lng) && (
-                <p className="text-sm text-gray-600 mt-2 p-2 bg-indigo-50 rounded-md">
-                  Location Captured: Lat:{" "}
-                  <span className="font-semibold">{lat}</span>, Lng:{" "}
-                  <span className="font-semibold">{lng}</span>
-                </p>
+                <div className="mt-4 space-y-4">
+                  <div className="h-64 w-full rounded-lg overflow-hidden border border-gray-300 shadow-inner">
+                    <Map />
+                  </div>
+                  <p className="text-sm text-gray-600 p-3 bg-indigo-50 border border-indigo-100 rounded-md">
+                    <span className="font-semibold text-indigo-800">Coordinates:</span> {lat}, {lng}
+                  </p>
+                </div>
               )}
             </div>
 
