@@ -9,7 +9,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { submitReport } from "../data-service/clientfunctions";
 import toast, { Toaster } from "react-hot-toast";
 import dynamic from "next/dynamic";
@@ -58,6 +58,40 @@ function Reportproblem({ id }) {
 
   const { register, handleSubmit, setValue } = useForm();
 
+  // Inside Reportproblem component:
+  const searchParams = useSearchParams();
+  let lat = searchParams.get("lat") || "";
+  let lng = searchParams.get("lng") || "";
+
+  // Auto-fetch precise address when lat/lng change (e.g. from map dragging)
+  useEffect(() => {
+    if (!lat || !lng) return;
+
+    const fetchPreciseAddress = async () => {
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+        const data = await response.json();
+        
+        if (data && data.display_name) {
+          // OpenStreetMap data structure varies wildly by region. 
+          // display_name contains the most accurate, comma-separated full address.
+          // We split and remove the country (last item) to make it look cleaner.
+          const parts = data.display_name.split(", ");
+          if (parts.length > 1) {
+            parts.pop(); // Remove country (India)
+          }
+          setValue("address", parts.join(", "));
+        }
+      } catch (error) {
+        console.error("Reverse geocoding failed:", error);
+      }
+    };
+    
+    // Add a small delay to prevent spamming the API if marker is moved rapidly
+    const timeoutId = setTimeout(fetchPreciseAddress, 500);
+    return () => clearTimeout(timeoutId);
+  }, [lat, lng, setValue]);
+
   function currentLocation() {
     toast.loading("Getting your live location...", { id: "location" });
 
@@ -67,29 +101,12 @@ function Reportproblem({ id }) {
     }
 
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        
-        console.log("📍 Captured live location:", { lat, lng });
-        toast.loading("Finding address...", { id: "location" });
-
-        try {
-          // Reverse Geocoding using OpenStreetMap Nominatim API
-          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-          const data = await response.json();
-          
-          if (data && data.display_name) {
-            setValue("address", data.display_name);
-            toast.success("Location and address captured!", { id: "location" });
-          } else {
-            toast.success("Location captured!", { id: "location" });
-          }
-        } catch (error) {
-          toast.success("Location captured! (Address lookup failed)", { id: "location" });
-        }
-
-        router.push(`/report?lat=${lat}&lng=${lng}`, { scroll: false });
+      (position) => {
+        const newLat = position.coords.latitude;
+        const newLng = position.coords.longitude;
+        console.log("📍 Captured live location:", { newLat, newLng });
+        toast.success("Location captured! Drag the pin if needed.", { id: "location" });
+        router.push(`/report?lat=${newLat}&lng=${newLng}`, { scroll: false });
       },
       (error) => {
         toast.error("Failed to get location. Please allow permissions.", { id: "location" });
@@ -98,9 +115,6 @@ function Reportproblem({ id }) {
       { enableHighAccuracy: true }
     );
   }
-  const searchParams = useSearchParams();
-  let lat = searchParams.get("lat") || "";
-  let lng = searchParams.get("lng") || "";
 
   function handleImageChange(e) {
     const newFiles = Array.from(e.target.files);
@@ -149,51 +163,35 @@ function Reportproblem({ id }) {
     const { title, description, category, address } = data;
     const userId = id;
 
-    // Predict department using ML API (optional, won't block submission)
-    let prediction = null;
-    if (description && description.length > 10) {
-      setIsPredicting(true);
-      try {
-        const response = await fetch("http://localhost:5000/predict", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description })
-        });
+    setIsPredicting(true);
+    toast.loading("Uploading images and running AI analysis...", { id: "submit" });
 
-        if (response.ok) {
-          prediction = await response.json();
-          setPredictedDepartment(prediction);
-        }
-      } catch (error) {
-        // Silently fail - ML prediction is optional
-        console.log("ML prediction unavailable:", error.message);
-      } finally {
-        setIsPredicting(false);
-      }
-    }
-
-    const data1 = await submitReport(
-      title,
-      description,
-      category,
-      images,
-      lat,
-      lng,
-      userId,
-      address
-    );
-
-    // Show success message with department if predicted
-    if (prediction) {
-      toast.success(
-        `Report submitted! Forwarded to ${prediction.department} Department ${prediction.icon}`,
-        { duration: 5000 }
+    try {
+      const response = await submitReport(
+        title,
+        description,
+        category,
+        images,
+        lat,
+        lng,
+        userId,
+        address
       );
-    } else {
-      toast.success("Report successfully submitted");
-    }
 
-    router.push("/account");
+      if (response && response.data) {
+        toast.success(
+          `Report submitted! AI Category: ${response.predictedCategory} | Severity: ${response.severity}`,
+          { id: "submit", duration: 5000 }
+        );
+        router.push("/account");
+      } else {
+        toast.error("Failed to submit report.", { id: "submit" });
+      }
+    } catch (error) {
+      toast.error("An error occurred during submission.", { id: "submit" });
+    } finally {
+      setIsPredicting(false);
+    }
   }
 
   const imageCount = images.length;

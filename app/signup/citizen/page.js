@@ -1,6 +1,8 @@
+"use client";
 import { LockClosedIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { signUpAction } from "@/app/data-service/actions";
+import { useActionState } from "react";
 
 const FormStatusMessage = ({ message, success }) => {
   if (!message) return null;
@@ -15,7 +17,9 @@ const FormStatusMessage = ({ message, success }) => {
   );
 };
 
-export default async function CitizenSignUpPage() {
+export default function CitizenSignUpPage() {
+  const [state, formAction, isPending] = useActionState(signUpAction, null);
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-2xl">
@@ -28,7 +32,12 @@ export default async function CitizenSignUpPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" action={signUpAction}>
+        <form className="mt-8 space-y-6" action={formAction}>
+          {state?.error && (
+            <div className="p-3 rounded-md bg-red-100 text-red-700 text-sm font-medium text-center border border-red-200">
+              {state.error}
+            </div>
+          )}
           <input type="hidden" name="role" value="citizen" />
 
           <div className="rounded-md shadow-sm space-y-3">
@@ -114,9 +123,10 @@ export default async function CitizenSignUpPage() {
 
           <button
             type="submit"
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition"
+            disabled={isPending}
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Sign Up as Citizen
+            {isPending ? "Signing Up..." : "Sign Up as Citizen"}
           </button>
         </form>
 

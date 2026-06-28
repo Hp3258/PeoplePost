@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { supabaseClient } from "../data-service/supabaseClient";
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
+import UpvoteButton from "./UpvoteButton";
 
 export default function ReportList({
   selectedIssue,
@@ -136,9 +137,14 @@ export default function ReportList({
                     </h3>
                     <StatusBadgeForGov status={issue.status} />
                   </div>
-                  <p className="text-xs text-indigo-600 font-medium uppercase">
-                    {issue.category}
-                  </p>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-indigo-600 font-medium uppercase">
+                      {issue.category}
+                    </p>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <UpvoteButton reportId={issue.id} />
+                    </div>
+                  </div>
                   <p className="text-sm text-gray-500 flex items-center">
                     <MapPinIcon className="w-4 h-4 mr-1 text-gray-400" />
                     {issue.address}
@@ -178,20 +184,20 @@ const IssueDetailPanel = ({ issue, onBack, setSelectedIssue }) => {
         toast.success("Resolution images uploaded successfully!");
       }
 
-      // Update the report status and add resolution images if any
-      const updateData = { status: newStatus };
-      if (resolutionImageUrls.length > 0) {
-        updateData.resolutionImageUrls = resolutionImageUrls;
+      // Use the server action so that the Resend email is triggered on RESOLVED
+      const { updateReportStatus } = await import("../data-service/actions");
+      const result = await updateReportStatus(issue.id, newStatus);
+
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      const { data, error } = await supabaseClient
-        .from("reports")
-        .update(updateData)
-        .eq("id", issue.id);
-
-      if (error) {
-        console.error("Supabase update error:", error);
-        throw error;
+      // If we have resolution images, save them via a separate update
+      if (resolutionImageUrls.length > 0) {
+        await supabaseClient
+          .from("reports")
+          .update({ resolutionImageUrls })
+          .eq("id", issue.id);
       }
 
       setSelectedIssue(null);
@@ -289,11 +295,11 @@ const IssueDetailPanel = ({ issue, onBack, setSelectedIssue }) => {
         </div>
         <div>
           <h3 className="font-semibold text-gray-800 mb-2">
-            Reported Images ({issue.images.length})
+            Reported Images ({(issue.imageUrls || []).length})
           </h3>
-          {issue.images.length > 0 ? (
+          {(issue.imageUrls || []).length > 0 ? (
             <div className="grid grid-cols-2 gap-4">
-              {issue.images.map((img, index) => (
+              {(issue.imageUrls || []).map((img, index) => (
                 <img
                   key={index}
                   src={img}

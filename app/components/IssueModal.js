@@ -1,12 +1,18 @@
 import { MapPinIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import StatusBadge from "./StatusBadge";
+import { updateReportStatus } from "../data-service/actions";
+import { useState } from "react";
 
 export default function IssueModal({ issue, onClose }) {
+  const [isUpdating, setIsUpdating] = useState(false);
+
   if (!issue) return null;
 
-  const updateStatus = (newStatus) => {
+  const updateStatus = async (newStatus) => {
+    setIsUpdating(true);
     console.log(`Updating issue ${issue.id} to status: ${newStatus}`);
-
+    await updateReportStatus(issue.id, newStatus);
+    setIsUpdating(false);
     onClose();
   };
 
@@ -88,16 +94,16 @@ export default function IssueModal({ issue, onClose }) {
               <button
                 onClick={() => updateStatus("IN_PROCESS")}
                 className="w-full py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition disabled:opacity-50"
-                disabled={issue.status === "IN_PROCESS"}
+                disabled={issue.status === "IN_PROCESS" || isUpdating}
               >
-                Mark as IN PROCESS
+                {isUpdating ? "Updating..." : "Mark as IN PROCESS"}
               </button>
               <button
                 onClick={() => updateStatus("RESOLVED")}
                 className="w-full py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition disabled:opacity-50"
-                disabled={issue.status === "RESOLVED"}
+                disabled={issue.status === "RESOLVED" || isUpdating}
               >
-                Mark as RESOLVED
+                {isUpdating ? "Updating..." : "Mark as RESOLVED"}
               </button>
             </div>
 

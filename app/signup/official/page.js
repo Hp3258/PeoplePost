@@ -1,8 +1,10 @@
+"use client";
 import { LockClosedIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { signUpAction } from "@/app/data-service/actions";
+import { useActionState } from "react";
+
 const FormStatusMessage = ({ message, success }) => {
-  // ... (Same simple client component)
   if (!message) return null;
   return (
     <div
@@ -15,9 +17,8 @@ const FormStatusMessage = ({ message, success }) => {
   );
 };
 
-export default function OfficialSignUpPage({ searchParams }) {
-  const statusMessage = searchParams.message;
-  const isSuccess = searchParams.success === "true";
+export default function OfficialSignUpPage() {
+  const [state, formAction, isPending] = useActionState(signUpAction, null);
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -32,7 +33,12 @@ export default function OfficialSignUpPage({ searchParams }) {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" action={signUpAction}>
+        <form className="mt-8 space-y-6" action={formAction}>
+          {state?.error && (
+            <div className="p-3 rounded-md bg-red-100 text-red-700 text-sm font-medium text-center border border-red-200">
+              {state.error}
+            </div>
+          )}
           <input type="hidden" name="role" value="official" />
 
           <div className="rounded-md shadow-sm space-y-3">
@@ -135,13 +141,12 @@ export default function OfficialSignUpPage({ searchParams }) {
             </div>
           </div>
 
-          <FormStatusMessage message={statusMessage} success={isSuccess} />
-
           <button
             type="submit"
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition"
+            disabled={isPending}
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Sign Up as Official
+            {isPending ? "Signing Up..." : "Sign Up as Official"}
           </button>
         </form>
 

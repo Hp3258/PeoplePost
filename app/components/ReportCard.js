@@ -3,6 +3,8 @@ import { useState } from "react";
 import StatusBadge from "./StatusBadge";
 import { ClockIcon, MapPinIcon, XMarkIcon, CheckBadgeIcon } from "@heroicons/react/24/outline";
 
+import UpvoteButton from "./UpvoteButton";
+
 export default function ReportCard({ report }) {
   const [showModal, setShowModal] = useState(false);
 
@@ -10,7 +12,7 @@ export default function ReportCard({ report }) {
     <>
       <div
         onClick={() => setShowModal(true)}
-        className="block bg-white p-4 rounded-xl shadow-md transition duration-150 hover:shadow-lg hover:ring-2 ring-indigo-500/50 cursor-pointer"
+        className="block bg-white p-4 rounded-xl shadow-md transition duration-150 hover:shadow-lg hover:ring-2 ring-indigo-500/50 cursor-pointer relative"
       >
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-lg font-semibold text-gray-800 truncate pr-4">
@@ -19,9 +21,14 @@ export default function ReportCard({ report }) {
           <StatusBadge status={report.status} />
         </div>
 
-        <p className="text-sm text-indigo-600 font-medium uppercase mb-2">
-          {report.category}
-        </p>
+        <div className="flex justify-between items-center mb-2">
+          <p className="text-sm text-indigo-600 font-medium uppercase">
+            {report.category}
+          </p>
+          <div onClick={(e) => e.stopPropagation()}>
+            <UpvoteButton reportId={report.id} />
+          </div>
+        </div>
 
         <div className="text-xs text-gray-500 space-y-1">
           <div className="flex items-center">
@@ -30,7 +37,7 @@ export default function ReportCard({ report }) {
           </div>
           <div className="flex items-center">
             <ClockIcon className="w-4 h-4 mr-1 text-gray-400" />
-            <span>Reported: {new Date(report.created_at).toLocaleDateString()}</span>
+            <span>Reported: {new Date(report.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}</span>
           </div>
         </div>
 

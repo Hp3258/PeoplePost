@@ -2,11 +2,16 @@ import Link from "next/link";
 
 import { ArrowLeftIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import ReportCard from "../components/ReportCard";
+import LiveReportList from "../components/LiveReportList";
 import { getCurrentUserData } from "../data-service/actions";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function AccountPage() {
   const data = await getCurrentUserData();
   const userReports = data?.data;
+  const userId = data?.userId;
 
   const reports = Array.isArray(userReports) ? userReports : [];
 
@@ -75,9 +80,7 @@ export default async function AccountPage() {
           </h2>
           <div className="space-y-4">
             {reports.length > 0 ? (
-              reports.map((report) => (
-                <ReportCard key={report.id} report={report} />
-              ))
+              <LiveReportList initialReports={reports} userId={userId} />
             ) : (
               <div className="p-10 bg-gradient-to-br from-gray-50 to-indigo-50 rounded-2xl text-center border-2 border-dashed border-indigo-200">
                 <div className="text-6xl mb-4">📝</div>

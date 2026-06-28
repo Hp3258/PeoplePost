@@ -1,8 +1,11 @@
+"use client";
 import { LockClosedIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { login } from "../data-service/actions";
+import { useActionState } from "react";
 
 export default function LoginPage() {
+  const [state, formAction, isPending] = useActionState(login, null);
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Animated background elements */}
@@ -25,7 +28,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" action={login}>
+        <form className="mt-8 space-y-6" action={formAction}>
+          {state?.error && (
+            <div className="p-3 rounded-md bg-red-100 text-red-700 text-sm font-medium text-center border border-red-200">
+              {state.error}
+            </div>
+          )}
           <div className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -70,9 +78,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="group relative w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent text-base font-bold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
+            disabled={isPending}
+            className="group relative w-full flex justify-center items-center gap-2 py-4 px-4 border border-transparent text-base font-bold rounded-xl text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Sign In
+            {isPending ? "Signing In..." : "Sign In"}
             <span className="group-hover:translate-x-1 transition-transform">→</span>
           </button>
         </form>
