@@ -134,7 +134,7 @@ The department prediction model uses:
 
 For issues or questions:
 - Open an issue on GitHub
-- Email: sapaterohan14@gmail.com
+- Email: pawarharish9403@gmail.com
 
 ## 🙏 Acknowledgments
 
